@@ -1,7 +1,10 @@
 /*
  *  File:   smartmemorytest.h
     Author: Jan Philipp Kiessling
-    brief:  Fuer sicherheitskritische Anwendungen ist es noetig Speicher auf seine korrekte
+    brief:  This is a test for external chips like EEPROMs or NAND-Chips
+
+
+            Fuer sicherheitskritische Anwendungen ist es noetig Speicher auf seine korrekte
             Taetigkeit zu pruefen.
 
             Einfachste Speichertestalgorithmen können bis zu 31 Tage
@@ -200,6 +203,7 @@
                     EEPROM, Flash und aehnliche Speicher koennen nur eine gewisse Anzahl an Schreibvorgaengen leisten,
                     bevor sie defekt werden.
 
+
     Beschreibung des Algorithmus smartmemorytest
     *********************************************
     Dieser Algorithmus basiert auf den Ausfuehrungen von Michael Barr unter [1]. Die Grundidee ist dabei, Fehler im
@@ -355,68 +359,174 @@
         Chiptest
         ********
         Hierbei wird an jede Speicherstelle im Chip einmal 0x55 und einmal 0xAA geschrieben und gelesen. Dadurch soll gezeigt
-        werden, dass man die Zellen grundsaetzlich ansprechen kann.
+        werden, dass man die Zellen grundsaetzlich ansprechen kann. Bevor der Test beendet wird, muss der letzte Lesevorgang
+        fuer den gesamten Chip noch einmal wiederholt werden und die selben Ergebnisse wie zuvor lesen. Dieser Lesevorgang dient
+        der Erkennung von Ninjalesefehlern, siehe unten.
 
             Laufzeit fuer ein 8 k EEPROM mit 5 ms Zugriffszeit
             **************************************************
             2 * 256 Schreibvorgaenge (immer ganze Pages schreiben)
             2 * 256 Lesevorgaenge    (immer ganze Pages lesem)
+          + 1 * 256 Lesevorgaenge    (immer ganze Pages lesem)  - dieser Lesevorgang dient der Erkennung von Ninjalesefehlern, siehe unten
 
-            --> 5,12 s
-                ======
-
-
-    [1] http://www.esacademy.com/en/library/technical-articles-and-documents/miscellaneous/software-based-memory-testing.html
+            --> 6,4 s
+                =====
 
 
+        Safe and restore
+        ****************
+        Before the test the data needs to be stored away and afterwards restored.
+
+            Laufzeit fuer ein 8 k EEPROM mit 5 ms Zugriffszeit
+            **************************************************
+            256 Lesevorgaenge (immer ganze Pages schreiben)
+            256 Schreibvorgaenge (immer ganze Pages schreiben)
+
+        --> 2,55 s
+            ======
 
 
-    Read/Writezyklen:
-            Wenn ein EEPROM getestet wird, hier ist wie oft dieser Algo den speicher beschreibt:
+    Bewertung dieses Tests in Hinsicht auf Fehleraufdeckung
+    *******************************************************
+    Dieser Test orientiert sich nicht an den Fehlerprimitiven, die im Kapitel "Betrachtung der theoretisch moeglichen Fehler"
+    vorgestellt und analysiert wurden, sondern an moeglichen Fehlerursachen.
+
+    Das heisst er prueft bestimmte Ursachen, die zu den Fehlerprimitiven fuehren koennen. Theoretisch kann es allerdings noch
+    andere Fehlerusachen geben, die zu den selben Fehlerprimitiven fuehren, diese werden dann nicht oder nur zufaellig aufgedeckt.
+
+    Um einer Bewertung naeher zu kommenm, soll vorerst einmal angenomemn werden, es gaebe keine weiteren Fehlerursachen.
+
+        Annahme: keine unbekannten Fehlerursachen
+        ******************************************
+        In der Zusammenfassung von "Primitive Fehler mit Opferzellen" gibt es eine Auflistung der Fehlerklassen.
 
 
-    Achtung:
-            Vor dem starten des Tests muessen die Interrupts ausgestellt werden!
-            Ansonsten koennte waehrend des Tests jemand in den Speicher schreiben oder noch schlimmer daraus lesen
-            Bzw andere Loesung: waehrend der Test laeuft in einen Schattenspeicher schreiben/lesen
+        Fehlerklasse                    | mögl.  Ursachen   | Wird erkannt durch    | fuer          | Kommentar
+        ---------------------------------------------------------------------------------------------------------------
+        Erfolgreiches Lesen             |     n/a           |   Chiptest            | alle zellen
+        Gutartige Lesefehler            | AB, DB, Chip      |   ABT, DBT, CT        | alle zellen   | keine Unterscheidung zum Zerstoerenden Lesefehler
+        Zerstoerende Lesefehler         | Chip              |   Chiptest            | alle zellen   | keine Unterscheidung zum Gutartigen Lesefehler
+        Ninjalesefehler                 | Chip              |   keine Erkennung     |  n/a          |
+        Erfolgreiches Schreiben         |     n/a           |   Chiptest            | alle zellen   |
+        Schreibfehler                   | AB, DB, Chip      |   ABT, DBT, CT        | alle zellen   |
+        ------------------------------- |                   |
+        mit/ohne zerstörter Opferzelle  | AB                |   ABT                 | alle Zellen   |
+
+
+        Erkennung von Ninjalesefehlern
+        ******************************
+        Wenn man den Algorithmus beim ChipTest um einen weiteren Lesevorgang erweitert, koennen Ninjalesefehler erkannt werden,
+        denn: Diese Fehler liefern das korrekte Ergebnis, kippen aber dann den Inhalt der Zelle.
+            Zum Beispiel:   Man hat eine Zelle mit diesem Fehler, die Zelle enthaelt eine 1. Wenn man diese Zelle liest erhaelt man
+                            eine 1 zurueck und der Inhalt der Zelle ist anschliessend null. Um dieses Kippen zu bemerken,
+                            kann man die Zelle einfach noch einmal auslesen.
+
+        Dadurch ergibt sich folgende Aufdeckung:
+
+        Fehlerklasse                    | mögl.  Ursachen   | Wird erkannt durch    | fuer          | Kommentar
+        ---------------------------------------------------------------------------------------------------------------
+        Erfolgreiches Lesen             |     n/a           |   Chiptest            | alle zellen   |
+        Gutartige Lesefehler            | AB, DB, Chip      |   ABT, DBT, CT        | alle zellen   | keine Unterscheidung zum Zerstoerenden Lesefehler
+        Zerstoerende Lesefehler         | Chip              |   Chiptest            | alle zellen   | keine Unterscheidung zum Gutartigen Lesefehler
+        Ninjalesefehler                 | Chip              |   CT                  | alle zellen   |
+        Erfolgreiches Schreiben         |     n/a           |   Chiptest            | alle zellen   |
+        Schreibfehler                   | AB, DB, Chip      |   ABT, DBT, CT        | alle zellen   |
+        ------------------------------- |                   |                       |               |
+        mit/ohne zerstörter Opferzelle  | AB                |   ABT                 | alle Zellen   |
+
+    Wie realistisch ist die Annahme, dass es keine weiteren Fehlerursachen gibt?
+    *****************************************************************************
+    Im Kapitel "Moegliche Fehlerursachen" wird auf verschiedene Fehlerursachen eingeangen. Diese sind:
+
+        Fehlerursache             |  Führt zu
+        ---------------------------------------------------------------------------------------------------
+         Zu haeufiges Schreiben   | Chipfehler, nicht mehr schreib/lesbar
+         Alterung                 | unbekannte auswirkungen
+         Höhen Strahlung          | einmaligen Bitkippern oder Zerstörung von Chip oder Leitungen
+         Leitungsfehler           | Adress- / Datenbusfehler
+         EMV Einstrahlung         | einmaligen Bitkippern oder Zerstörung von Chip
+
+    Welche Fehlerprimitive durch einen Defekt im Chip ausgeloest werden, kann vermutlich nur in Zusammenarbeit mit dem
+    jeweiligen Chiphersteller ermittelt werden. Es ist daher unklar, ob die einfachen Lese-/Schreibzugriffe, die im Chiptest
+    verwendet werden, dazu geeignet sind alle möglichen prmitiven Fehler die durch Alterung oder Höhenstrahlung auftreten koennen
+    aufzudecken.
+    Einmalige Bitkipper koennen ebenfalls nicht detektiert werden, das ist aber wie oben beschrieben durch diese Art von
+    Speichertests prinzipiell nicht zu loesen und benoetigt andere Techniken wie z.B. CRC-Pruefsummen oder doppelte Datenhaltung.
+
+    Anmerkung:
+    Es koennte im Adressbus Kombinationsfehler geben, also z.B. dass Adressleitung 4 nur dann faelschlicherweise High wird,
+    wenn Leitung 1 und 2 auch high sind. Dies wurde unter [1] nicht beachtet.
+
+    Stoppage and background
+    ************************
+    Der Test muss im Hintergrund laufen koennen.
+    Es muss eine Moeglichkeit geben, den Test zum abbruch zu zwingen, damit man beispielsweise
+    bei einem brown-out Daten retten kann.
+
 
     Zeitverbrauch:
-            Dieser Test benoetigt:
+            Dieser Test benoetigt auf einem 8k EEPROM mit 5 ms Zugriffszeit vorraussichtlich 12 s.
+            Der Zeitverbrauch entspricht etwa 8*n, wobei n die Anzahl der Bits ist.
+
+
+    Fazit
+    *****
+    Die Annahme aus [1], dass mit diesen Tests alle moeglichen Fehlerursachen abgedeckt sind und damit alle moeglichen primitiven
+    Fehler gefunden werden koennen muss angezweifelt werden. Fuer Anwendungen mit hoechsten Sicherheitsanforderungen sollte
+    daher weiter recherchiert werden, ob mit Hilfe von March Algorithmen nicht doch eine zuverlaessig, ursachenunabhaengige
+    Aufdeckung bei akzeptabler Laufzeit erreicht werden kann.
+    Recherchen haben ergeben, dass MarchC- etwa 10*n an Laufzeit verbraucht. Wenn man diesen Algorithmus so modifiziert dass
+    er zuverlaessig alle oder fast alle Fehlerprimitive aufdeckt, verbraucht er kaum mehr.
+    Diese Algorithmen bauen dann nicht darauf auf, die Fehlerursachen festzustellen, sondern pruefen direkt auf die Fehlerprimitive.
+    Die Aufdeckungsrate ist daher deutlich zuverlaessiger und da der erwartete Zeitverbraucht kaum hoeher sein sollte,
+    soll hier so eine Alternative entwickelt werden.
+
+
+
+    [1] http://2www.esacademy.com/en/library/technical-articles-and-documents/miscellaneous/software-based-memory-testing.html
+
+
+
+
+
+
+
+
+
 
 */
 
 
-#ifndef BITRUNNER_H
-#define BITRUNNER_H
+#ifndef SMARTMEMTEST_H
+#define SMARTMEMTEST_H
 
 #include "stdint.h"
-typedef uint8_t (*tfp_BR_ReadByte) (uint16_t const _u16ByteNr);
-typedef void    (*tfp_BR_WriteByte)(uint16_t const _u16ByteNr, uint8_t const _u8Data);
+typedef void    (*tfp_BR_ReadBytes) (uint32_t const _u32Adress, uint32_t const _u32Len, uint8_t* const _pu8Data);
+typedef void    (*tfp_BR_WriteBytes)(uint32_t const _u32Adress, uint32_t const _u32Len, uint8_t* const _pu8Data);
 
 typedef struct
 {
     uint8_t m_b8InitDone;               //!< zeigt an, ob das objekt erfolgreich initialisiert wurde (1) oder nicht (0)
-    tfp_BR_WriteByte m_fpWriteByte;     //!< mit dieser Funktion kann das Modul auf den zu pruefenden Speicher ein einzelnes Byte schreiben
-    tfp_BR_ReadByte m_fpReadByte;       //!< mit dieser Funktion kann das Modul aus dem zu pruefenden Speicher ein einzelnes Byte lesen
-    uint32_t m_u32StartAdress;          //!< An welcher Adresse im Speicher soll der Test beginnen?
-    uint16_t m_u16Blocksize;            //<! Wie gross ist der zu pruefende Speicher? In Byte
-    uint32_t m_u32Steps;                //!< hier speichert das Modul wieviele Steps es bereits durchgefuehrt hat
-    uint16_t m_u16OldByteNr;            //!< Eine Hilfsvariable um herauszufinden, ob man gerade eine Bytegrenze ueberschritten hat
-    uint8_t* m_pu8_Workmem;             //!< Hier wird der Inhalt des zu pruefenden Speichers gerettet, um ihn nach dem Test wieder herstellen zu koennen. Muss genauso gross sein, wie der zu preufende Speicher (vrgl. m_u16Blocksize)
+    tfp_BR_WriteBytes m_fpWriteByte;     //!< mit dieser Funktion kann das Modul auf den zu pruefenden Speicher ein einzelnes Byte schreiben
+    tfp_BR_ReadBytes m_fpReadByte;       //!< mit dieser Funktion kann das Modul aus dem zu pruefenden Speicher ein einzelnes Byte lesen
+    uint16_t m_u16MemSize;            //<! Wie gross ist der zu pruefende Speicher? In Byte
+    uint8_t* m_pu8CompleteMemBfr;       //!< Hier wird der Inhalt des zu pruefenden Speichers gerettet, um ihn nach dem Test wieder herstellen zu koennen. Muss genauso gross sein, wie der zu preufende Speicher (vrgl. m_u16Blocksize)
 }ts_SMT_ClassStruct;
 
 
-uint8_t u8_BIR_InitBitrunner(
+uint8_t u8_SMT_InitSmartMemoryTest(
             ts_SMT_ClassStruct* _pThis,     //!< zeiger auf das struct dass das zu bearbeitende objekt repraesentiert, also die attribute/variablen der klasse
-            uint8_t *_pu8_Workmem,          //!< siehe Definition von ts_BIR_ClassStruct
-            uint32_t _u32StartAdress,       //!< siehe Definition von ts_BIR_ClassStruct
-            uint16_t _u16Blocksize,         //!< siehe Definition von ts_BIR_ClassStruct
-            tfp_BR_ReadByte _fpReadByte,    //!< siehe Definition von ts_BIR_ClassStruct
-            tfp_BR_WriteByte _fpWriteByte   //!< siehe Definition von ts_BIR_ClassStruct
+            uint8_t *_pu8CompleteMemBfr,          //!< siehe Definition von ts_BIR_ClassStruct
+            uint32_t _u32MemSize,       //!< siehe Definition von ts_BIR_ClassStruct
+
+            uint8_t *_pu8PageBfr,          //!< siehe Definition von ts_BIR_ClassStruct
+            uint32_t _u32PageSize,       //!< siehe Definition von ts_BIR_ClassStruct
+
+            tfp_BR_ReadBytes _fpReadByte,    //!< siehe Definition von ts_BIR_ClassStruct
+            tfp_BR_WriteBytes _fpWriteByte   //!< siehe Definition von ts_BIR_ClassStruct
             );
 
-void v_BIR_PrepareMem(ts_SMT_ClassStruct* _pThis);
-void v_BIR_RestoreMem(ts_SMT_ClassStruct* _pThis);
+
 
 
 #endif // BITRUNNER_H
