@@ -483,6 +483,13 @@
 
 
 
+
+    Untersuchung MarchC-
+    *********************
+    Achtung, man braucht garkeinen Memtest fuer EEPROMs. Denn da kann  man immer einfach checksummen nehmen.
+
+    --> MarchC- als standdart fuer ramtest implementieren
+
     [1] http://2www.esacademy.com/en/library/technical-articles-and-documents/miscellaneous/software-based-memory-testing.html
 
 
@@ -501,32 +508,27 @@
 #define SMARTMEMTEST_H
 
 #include "stdint.h"
-typedef void    (*tfp_BR_ReadBytes) (uint32_t const _u32Adress, uint32_t const _u32Len, uint8_t* const _pu8Data);
-typedef void    (*tfp_BR_WriteBytes)(uint32_t const _u32Adress, uint32_t const _u32Len, uint8_t* const _pu8Data);
+typedef uint8_t (*tfp_BR_ReadByte) (uint32_t const _u32ByteNr);
+typedef void    (*tfp_BR_WriteByte)(uint32_t const _u32ByteNr, uint8_t const _u8Data);
+
 
 typedef struct
 {
-    uint8_t m_b8InitDone;               //!< zeigt an, ob das objekt erfolgreich initialisiert wurde (1) oder nicht (0)
-    tfp_BR_WriteBytes m_fpWriteByte;     //!< mit dieser Funktion kann das Modul auf den zu pruefenden Speicher ein einzelnes Byte schreiben
-    tfp_BR_ReadBytes m_fpReadByte;       //!< mit dieser Funktion kann das Modul aus dem zu pruefenden Speicher ein einzelnes Byte lesen
-    uint16_t m_u16MemSize;            //<! Wie gross ist der zu pruefende Speicher? In Byte
-    uint8_t* m_pu8CompleteMemBfr;       //!< Hier wird der Inhalt des zu pruefenden Speichers gerettet, um ihn nach dem Test wieder herstellen zu koennen. Muss genauso gross sein, wie der zu preufende Speicher (vrgl. m_u16Blocksize)
-}ts_SMT_ClassStruct;
+    uint8_t* m_pu8Mem;
+    uint32_t m_u32MemSize;
+    tfp_BR_ReadByte m_fpReadByte;
+    tfp_BR_WriteByte m_fpWriteByte;
+}ts_MCM_ClassStruct;
 
 
-uint8_t u8_SMT_InitSmartMemoryTest(
-            ts_SMT_ClassStruct* _pThis,     //!< zeiger auf das struct dass das zu bearbeitende objekt repraesentiert, also die attribute/variablen der klasse
-            uint8_t *_pu8CompleteMemBfr,          //!< siehe Definition von ts_BIR_ClassStruct
-            uint32_t _u32MemSize,       //!< siehe Definition von ts_BIR_ClassStruct
+uint8_t b8_MCM_Init(ts_MCM_ClassStruct* _pThis,     //!< zeiger auf das struct dass das zu bearbeitende objekt repraesentiert, also die attribute/variablen der klasse
+            uint32_t _u32MemSize,
 
-            uint8_t *_pu8PageBfr,          //!< siehe Definition von ts_BIR_ClassStruct
-            uint32_t _u32PageSize,       //!< siehe Definition von ts_BIR_ClassStruct
-
-            tfp_BR_ReadBytes _fpReadByte,    //!< siehe Definition von ts_BIR_ClassStruct
-            tfp_BR_WriteBytes _fpWriteByte   //!< siehe Definition von ts_BIR_ClassStruct
+            tfp_BR_ReadByte _fpReadByte,
+            tfp_BR_WriteByte _fpWriteByte
             );
 
-
-
+uint8_t b8_MCM_Element_Any_W0(ts_MCM_ClassStruct* _pThis);
+uint8_t b8_MCM_Element_BotToTop_R0W1(ts_MCM_ClassStruct* _pThis, uint32_t* _pu32FailedAtByteNr);
 
 #endif // BITRUNNER_H
