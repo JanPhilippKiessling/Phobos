@@ -1,7 +1,8 @@
 #include "SmartMemoryTest.h"
 
+#include <iostream>
 
-
+using namespace std;
 
 /*
  * brief: returns 0 if all pointers != 0 and 1 if one is NULL
@@ -45,6 +46,12 @@ uint8_t b8_MCM_Element_Any_W0(ts_MCM_ClassStruct* _pThis)
     return 0;
 }
 
+
+void vDebugOutput(uint16_t _u8)
+{
+
+}
+
 uint8_t b8_MCM_Element_BotToTop_R0W1(ts_MCM_ClassStruct* _pThis, uint32_t* _pu32FailedAtByteNr)
 {
     uint8_t u8RetVal = 0;
@@ -69,10 +76,6 @@ uint8_t b8_MCM_Element_BotToTop_R0W1(ts_MCM_ClassStruct* _pThis, uint32_t* _pu32
         }
     }
 
-
-
-
-
-
-    return u8RetVal;
+   return u8RetVal;
 }
+

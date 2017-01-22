@@ -14,7 +14,8 @@ class TST_Framework: public QObject
 {
     Q_OBJECT
 private slots:
-    void TC_MarchCMinus();
+    void TC_W0_and_BotToTop_R0W1();
+    void TC_BotToTop_R1W0();
 };
 
 
@@ -85,7 +86,7 @@ void vPrintMem(uint16_t NrOfBytes)
 #endif
 }
 
-void TST_Framework::TC_MarchCMinus()
+void TST_Framework::TC_W0_and_BotToTop_R0W1()
 {
     tfp_BR_ReadByte _fpReadByte   = &u8ReadByte;
     tfp_BR_WriteByte _fpWriteByte = &vWriteByte;
@@ -179,8 +180,6 @@ void TST_Framework::TC_MarchCMinus()
     QVERIFY(u32_FailedAtByteNr == 0);
 
 
-
-
     // another run with another error
 
     b8_MCM_Element_Any_W0(&sThis);
@@ -198,6 +197,56 @@ void TST_Framework::TC_MarchCMinus()
 
 }
 
+
+void TST_Framework::TC_BotToTop_R1W0()
+{
+    // setup the test
+    tfp_BR_ReadByte _fpReadByte   = &u8ReadByte;
+    tfp_BR_WriteByte _fpWriteByte = &vWriteByte;
+    uint8_t _pu8Mem[MEMSIZE];
+
+    ts_MCM_ClassStruct sThis;
+    uint32_t u32_FailedAtByteNr = 0;
+
+    // setup semi random data
+    uint8_t u8 = 0;
+    for(uint16_t i = 0; i<MEMSIZE; i++)
+    {
+        a8MemToRun[i] = u8;
+        u8++;
+    }
+
+
+    // happy path
+    QVERIFY(b8_MCM_Element_Any_W0(&sThis) == 0);
+    QVERIFY(b8_MCM_Element_BotToTop_R0W1(&sThis, &u32_FailedAtByteNr) == 0);
+    QVERIFY(u32_FailedAtByteNr == 0);
+    QVERIFY(a8MemToRun[0] == 0xFF);
+
+}
+
+
+#if 0
+// viewcode
+
+if(u8ByteCnt == 0)
+{
+cout << hex << (uint16_t)(_pThis->m_fpReadByte(u8ByteCnt+2)) << (uint16_t)(_pThis->m_fpReadByte(u8ByteCnt+1)) << (uint16_t)(_pThis->m_fpReadByte(u8ByteCnt))<< endl;
+getchar();
+}
+
+if(u8ByteCnt == 1)
+{
+cout << hex << (uint16_t)(_pThis->m_fpReadByte(u8ByteCnt+1)) << (uint16_t)(_pThis->m_fpReadByte(u8ByteCnt+0)) << (uint16_t)(_pThis->m_fpReadByte(u8ByteCnt-1))<< endl;
+getchar();
+}
+
+if(u8ByteCnt == 2)
+{
+cout << hex << (uint16_t)(_pThis->m_fpReadByte(u8ByteCnt+0)) << (uint16_t)(_pThis->m_fpReadByte(u8ByteCnt-1)) << (uint16_t)(_pThis->m_fpReadByte(u8ByteCnt-2))<< endl;
+getchar();
+}
+#endif
 
 QTEST_MAIN(TST_Framework)
 
