@@ -514,9 +514,15 @@ typedef void    (*tfp_BR_WriteByte)(uint32_t const _u32ByteNr, uint8_t const _u8
 
 typedef enum
 {
-    eR0W1 = 0,
+    eR0W1 = 0,      //!< if you dont know what this is read the document ../research/ch03.pdf
     eR1W0
 }te_MarchElementAction;
+
+typedef enum
+{
+    eBot2Top = 0,   //!< if you dont know what this is read the document ../research/ch03.pdf
+    eTop2Bot
+}te_MarchElementDirection;
 
 typedef struct
 {
@@ -535,6 +541,11 @@ uint8_t b8_MCM_Init(ts_MCM_ClassStruct* _pThis,     //!< zeiger auf das struct d
             );
 
 uint8_t b8_MCM_Element_Any_W0(ts_MCM_ClassStruct* _pThis);
-uint8_t b8_MCM_Element_BotToTop(ts_MCM_ClassStruct* _pThis, te_MarchElementAction _eAction, uint32_t* _pu32FailedAtByteNr);
+
+uint8_t b8_MCM_March( ts_MCM_ClassStruct* _pThis,
+                        te_MarchElementDirection _eDir,
+                        te_MarchElementAction _eAction,
+                        uint32_t* _pu32FailedAtByteNr   //!< contains the number of the broken byte, in case sth went wrong, cnt starts at 0
+                        );
 
 #endif // BITRUNNER_H
