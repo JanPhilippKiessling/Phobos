@@ -6,8 +6,8 @@ import re
 import string
 
 
-outputfile = open("C:/software/phobos/tools/output.txt", "w")
-inputfile = open("C:/software/phobos/tools/input.txt", "r")
+outputfile = open("output.txt", "w")
+inputfile = open("input.txt", "r")
 
 
 
