@@ -56,7 +56,7 @@ uint8_t b8_MCM_Element_BotToTop(ts_MCM_ClassStruct* _pThis, te_MarchElementActio
     uint8_t u8RetVal = 0;
     uint8_t u8BitCnt = 0;
     uint8_t u8ByteCnt = 0;
-    uint8_t u8CmpVal = 0x00;
+    uint8_t u8CmpVal = 0x00;    // this is used to compare the freshly read value and then manipulated and written into the mem
 
     //for every byte
     for(u8ByteCnt = 0; (u8ByteCnt < _pThis->m_u32MemSize) && (u8RetVal == 0); u8ByteCnt++)

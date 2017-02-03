@@ -1,0 +1,6 @@
+enum
+{
+	jan = 0,
+	eJan2,
+	Jan4
+}
