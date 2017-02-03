@@ -32,7 +32,7 @@ static uint8_t mgu8_ManipulationValue   = 0;
 static uint32_t mgu32_ByteNrToManipulate  = 0;
 static uint8_t mgu8_ManipulateMemory    = 0;
 static uint32_t mgu32_TriggerAdress     = 0;
-static uint32_t mgu32StepCnt = 0;
+static uint32_t mgu32StepCnt = 0; // starts with 1 (ie first write step)
 static uint32_t mgu32_ManipAtStepNr = 0;
 
 
@@ -51,6 +51,10 @@ void vWriteByte(uint32_t const _u32ByteNr, uint8_t const _u8Data)
     }
 }
 
+
+// the algo runs through in one call. so if we want to inject to a specific byte while the algo runs, we need to manipulate the write or read function to do sth wrong.
+// to get exactly the manipulation at the desired algo step we use a combination of a trigger-adress and step-counter. you probably want to reset the step counter every once in a while
+// if we only used a trigger adress we couldnt manipulate the writing to byte 3 in the third "step" (remember: MCM is bit oriented)
 void vManipulateMemory(uint32_t _u32BytNr, uint8_t _u8Value, uint32_t _u32TriggerAdress, uint32_t _u32ManipAtStepNr)
 {
     mgu8_ManipulationValue  = _u8Value;
@@ -126,7 +130,7 @@ void TST_Framework::TC_W0_and_BotToTop_R0W1()
     // happy path
     QVERIFY(b8_MCM_Element_Any_W0(&sThis) == 0);
 
-    QVERIFY(b8_MCM_Element_BotToTop_R0W1(&sThis, &u32_FailedAtByteNr) == 0);
+    QVERIFY(b8_MCM_Element_BotToTop(&sThis, eR0W1,  &u32_FailedAtByteNr) == 0);
     QVERIFY(u32_FailedAtByteNr == 0);
     QVERIFY(a8MemToRun[0] == 0xFF);
 
@@ -134,7 +138,7 @@ void TST_Framework::TC_W0_and_BotToTop_R0W1()
 
     a8MemToRun[0] = 0x01; // place error in bit 0
 
-    QVERIFY(b8_MCM_Element_BotToTop_R0W1(&sThis, &u32_FailedAtByteNr) == 1);
+    QVERIFY(b8_MCM_Element_BotToTop(&sThis, eR0W1,  &u32_FailedAtByteNr) == 1);
     QVERIFY(u32_FailedAtByteNr == 0);
 
     // another run with another error
@@ -146,7 +150,7 @@ void TST_Framework::TC_W0_and_BotToTop_R0W1()
                         0
                        );
 
-    QVERIFY(b8_MCM_Element_BotToTop_R0W1(&sThis, &u32_FailedAtByteNr) == 1);
+    QVERIFY(b8_MCM_Element_BotToTop(&sThis, eR0W1,  &u32_FailedAtByteNr) == 1);
     QVERIFY(u32_FailedAtByteNr == 0);
 
 
@@ -162,7 +166,7 @@ void TST_Framework::TC_W0_and_BotToTop_R0W1()
                         2 //!< manip at write step nr
                        );
 
-    QVERIFY(b8_MCM_Element_BotToTop_R0W1(&sThis, &u32_FailedAtByteNr) == 1);
+    QVERIFY(b8_MCM_Element_BotToTop(&sThis, eR0W1,  &u32_FailedAtByteNr) == 1);
     QVERIFY(u32_FailedAtByteNr == 0);
 
     // another run with another error
@@ -176,7 +180,7 @@ void TST_Framework::TC_W0_and_BotToTop_R0W1()
                         3 //!< manip at write step nr
                        );
 
-    QVERIFY(b8_MCM_Element_BotToTop_R0W1(&sThis, &u32_FailedAtByteNr) == 1);
+    QVERIFY(b8_MCM_Element_BotToTop(&sThis, eR0W1,  &u32_FailedAtByteNr) == 1);
     QVERIFY(u32_FailedAtByteNr == 0);
 
 
@@ -191,7 +195,7 @@ void TST_Framework::TC_W0_and_BotToTop_R0W1()
                         0 //!< manip at write step nr
                        );
 
-    QVERIFY(b8_MCM_Element_BotToTop_R0W1(&sThis, &u32_FailedAtByteNr) == 1);
+    QVERIFY(b8_MCM_Element_BotToTop(&sThis, eR0W1,  &u32_FailedAtByteNr) == 1);
     QVERIFY(u32_FailedAtByteNr == 1);
 
 
@@ -200,6 +204,7 @@ void TST_Framework::TC_W0_and_BotToTop_R0W1()
 
 void TST_Framework::TC_BotToTop_R1W0()
 {
+
     // setup the test
     tfp_BR_ReadByte _fpReadByte   = &u8ReadByte;
     tfp_BR_WriteByte _fpWriteByte = &vWriteByte;
@@ -216,13 +221,92 @@ void TST_Framework::TC_BotToTop_R1W0()
         u8++;
     }
 
-
     // happy path
+    QVERIFY(b8_MCM_Init(&sThis,  MEMSIZE, _fpReadByte, _fpWriteByte ) == 0);
     QVERIFY(b8_MCM_Element_Any_W0(&sThis) == 0);
-    QVERIFY(b8_MCM_Element_BotToTop_R0W1(&sThis, &u32_FailedAtByteNr) == 0);
+    QVERIFY(b8_MCM_Element_BotToTop(&sThis, eR0W1,  &u32_FailedAtByteNr) == 0);
     QVERIFY(u32_FailedAtByteNr == 0);
-    QVERIFY(a8MemToRun[0] == 0xFF);
+    for(uint32_t i = 0; i<MEMSIZE; i++)
+    {
+        QVERIFY(a8MemToRun[i] == 0xFF);
+    }
 
+    QVERIFY(b8_MCM_Element_BotToTop(&sThis, eR1W0, &u32_FailedAtByteNr) == 0);
+    QVERIFY(u32_FailedAtByteNr == 0);
+
+    for(uint32_t i = 0; i<MEMSIZE; i++)
+    {
+        QVERIFY(a8MemToRun[i] == 0x00);
+    }
+
+    // put in an error in the byte 0
+    QVERIFY(b8_MCM_Element_Any_W0(&sThis) == 0);
+    QVERIFY(b8_MCM_Element_BotToTop(&sThis, eR0W1,  &u32_FailedAtByteNr) == 0);
+
+    mgu32StepCnt = 0;
+    vManipulateMemory(  0,  //!< _u32BytNr
+                        3,  //!< _u8Value
+                        0,  //!< _u32TriggerAdress
+                        0   //!< manip at write step nr
+                       );
+    QVERIFY(b8_MCM_Element_BotToTop(&sThis, eR1W0, &u32_FailedAtByteNr) == 1);
+    QVERIFY(u32_FailedAtByteNr == 0);
+
+
+    // put in an error in the byte 1
+    QVERIFY(b8_MCM_Element_Any_W0(&sThis) == 0);
+    QVERIFY(b8_MCM_Element_BotToTop(&sThis, eR0W1,  &u32_FailedAtByteNr) == 0);
+
+    mgu32StepCnt = 0;
+    vManipulateMemory(  1,      //!< _u32BytNr
+                        0x3F,   //!< _u8Value
+                        1,      //!< _u32TriggerAdress
+                        15      //!< manip at write step nr
+                       );
+    QVERIFY(b8_MCM_Element_BotToTop(&sThis, eR1W0, &u32_FailedAtByteNr) == 1);
+    QVERIFY(u32_FailedAtByteNr == 1);
+
+
+    // put in an error in the byte at half way through
+    QVERIFY(b8_MCM_Element_Any_W0(&sThis) == 0);
+    QVERIFY(b8_MCM_Element_BotToTop(&sThis, eR0W1,  &u32_FailedAtByteNr) == 0);
+
+    mgu32StepCnt = 0;
+    vManipulateMemory(  MEMSIZE/2,      //!< _u32BytNr
+                        0x00,   //!< _u8Value
+                        1,      //!< _u32TriggerAdress
+                        0      //!< manip at write step nr, 0 for dont care
+                       );
+    QVERIFY(b8_MCM_Element_BotToTop(&sThis, eR1W0, &u32_FailedAtByteNr) == 1);
+    QVERIFY(u32_FailedAtByteNr == MEMSIZE/2);
+
+
+    // put in an error in the byte near to the end
+    QVERIFY(b8_MCM_Element_Any_W0(&sThis) == 0);
+    QVERIFY(b8_MCM_Element_BotToTop(&sThis, eR0W1,  &u32_FailedAtByteNr) == 0);
+
+    mgu32StepCnt = 0;
+    vManipulateMemory(  MEMSIZE-5,      //!< _u32BytNr
+                        0x02,   //!< _u8Value
+                        1,      //!< _u32TriggerAdress
+                        0      //!< manip at write step nr, 0 for dont care
+                       );
+    QVERIFY(b8_MCM_Element_BotToTop(&sThis, eR1W0, &u32_FailedAtByteNr) == 1);
+    QVERIFY(u32_FailedAtByteNr == MEMSIZE-5);
+
+
+    // put in an error in the byte at the end
+    QVERIFY(b8_MCM_Element_Any_W0(&sThis) == 0);
+    QVERIFY(b8_MCM_Element_BotToTop(&sThis, eR0W1,  &u32_FailedAtByteNr) == 0);
+
+    mgu32StepCnt = 0;
+    vManipulateMemory(  MEMSIZE-1,      //!< _u32BytNr
+                        0x02,   //!< _u8Value
+                        1,      //!< _u32TriggerAdress
+                        0      //!< manip at write step nr, 0 for dont care
+                       );
+    QVERIFY(b8_MCM_Element_BotToTop(&sThis, eR1W0, &u32_FailedAtByteNr) == 1);
+    QVERIFY(u32_FailedAtByteNr == MEMSIZE-1);
 }
 
 

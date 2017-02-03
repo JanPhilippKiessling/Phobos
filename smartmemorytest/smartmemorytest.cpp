@@ -4,6 +4,10 @@
 
 using namespace std;
 
+
+uint8_t u8_UpdateCmpVal(uint8_t _u8CmpVal, te_MarchElementAction _eAction, uint8_t _u8BitCnt);
+uint8_t u8_InitCmpVal(te_MarchElementAction _eAction);
+
 /*
  * brief: returns 0 if all pointers != 0 and 1 if one is NULL
 */
@@ -47,12 +51,7 @@ uint8_t b8_MCM_Element_Any_W0(ts_MCM_ClassStruct* _pThis)
 }
 
 
-void vDebugOutput(uint16_t _u8)
-{
-
-}
-
-uint8_t b8_MCM_Element_BotToTop_R0W1(ts_MCM_ClassStruct* _pThis, uint32_t* _pu32FailedAtByteNr)
+uint8_t b8_MCM_Element_BotToTop(ts_MCM_ClassStruct* _pThis, te_MarchElementAction _eAction, uint32_t* _pu32FailedAtByteNr)
 {
     uint8_t u8RetVal = 0;
     uint8_t u8BitCnt = 0;
@@ -61,8 +60,9 @@ uint8_t b8_MCM_Element_BotToTop_R0W1(ts_MCM_ClassStruct* _pThis, uint32_t* _pu32
 
     //for every byte
     for(u8ByteCnt = 0; (u8ByteCnt < _pThis->m_u32MemSize) && (u8RetVal == 0); u8ByteCnt++)
-    {
-        u8CmpVal = 0x00;
+    {        
+        u8CmpVal = u8_InitCmpVal(_eAction);
+
         //for every bit
         for(u8BitCnt = 0; (u8BitCnt < 8) && (u8RetVal == 0); u8BitCnt++)
         {
@@ -71,7 +71,9 @@ uint8_t b8_MCM_Element_BotToTop_R0W1(ts_MCM_ClassStruct* _pThis, uint32_t* _pu32
                 *_pu32FailedAtByteNr = u8ByteCnt;
                 u8RetVal = 1;
             }
-            u8CmpVal += 1 << u8BitCnt;
+
+            u8CmpVal = u8_UpdateCmpVal(u8CmpVal, _eAction, u8BitCnt);
+
             _pThis->m_fpWriteByte(u8ByteCnt, u8CmpVal);
         }
     }
@@ -79,3 +81,37 @@ uint8_t b8_MCM_Element_BotToTop_R0W1(ts_MCM_ClassStruct* _pThis, uint32_t* _pu32
    return u8RetVal;
 }
 
+
+/* this is a helper function that updates the compare (and write) value for b8_MCM_Element() depending on the active march element. It was created to increase readability */
+
+uint8_t u8_UpdateCmpVal(uint8_t _u8CmpVal, te_MarchElementAction _eAction, uint8_t _u8BitCnt)
+{
+    uint8_t u8_NewCmpVal = _u8CmpVal;
+
+    if(_eAction == eR0W1)
+    {
+        u8_NewCmpVal += 1 << _u8BitCnt;          //R0W1 BotToTop
+    }
+    else       // eR1W0
+    {
+        u8_NewCmpVal -= 1 << _u8BitCnt;          //R1W0 BotToTop
+    }
+
+    return u8_NewCmpVal;
+}
+/* this is a helper function that (re)inits the compare (and write) value for b8_MCM_Element() depending on the active march element. It was created to increase readability */
+uint8_t u8_InitCmpVal(te_MarchElementAction _eAction)
+{
+    uint8_t u8_NewCmpVal = 0;
+
+    if(_eAction == eR0W1)
+    {
+        u8_NewCmpVal = 0x00;    //R0W1 BotToTop
+    }
+    else       // eR1W0
+    {
+        u8_NewCmpVal = 0xFF;    //R1W0 BotToTop
+    }
+
+    return u8_NewCmpVal;
+}

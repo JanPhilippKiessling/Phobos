@@ -512,6 +512,12 @@ typedef uint8_t (*tfp_BR_ReadByte) (uint32_t const _u32ByteNr);
 typedef void    (*tfp_BR_WriteByte)(uint32_t const _u32ByteNr, uint8_t const _u8Data);
 
 
+typedef enum
+{
+    eR0W1 = 0,
+    eR1W0
+}te_MarchElementAction;
+
 typedef struct
 {
     uint8_t* m_pu8Mem;
@@ -529,6 +535,6 @@ uint8_t b8_MCM_Init(ts_MCM_ClassStruct* _pThis,     //!< zeiger auf das struct d
             );
 
 uint8_t b8_MCM_Element_Any_W0(ts_MCM_ClassStruct* _pThis);
-uint8_t b8_MCM_Element_BotToTop_R0W1(ts_MCM_ClassStruct* _pThis, uint32_t* _pu32FailedAtByteNr);
+uint8_t b8_MCM_Element_BotToTop(ts_MCM_ClassStruct* _pThis, te_MarchElementAction _eAction, uint32_t* _pu32FailedAtByteNr);
 
 #endif // BITRUNNER_H
