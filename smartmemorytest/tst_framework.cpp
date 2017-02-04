@@ -17,6 +17,8 @@ private slots:
     void TC_W0_and_BotToTop_R0W1();
     void TC_BotToTop_R1W0();
     void TC_TopToBot_R0W1();
+    void TC_TopToBot_R1W0();
+    void TC_R0();
 };
 
 
@@ -410,6 +412,192 @@ void TST_Framework::TC_TopToBot_R0W1()
     QVERIFY(u32_FailedAtByteNr == MEMSIZE-1);
 }
 
+void TST_Framework::TC_TopToBot_R1W0()
+{
+    // setup the test
+    tfp_BR_ReadByte _fpReadByte   = &u8ReadByte;
+    tfp_BR_WriteByte _fpWriteByte = &vWriteByte;
+
+    ts_MCM_ClassStruct sThis;
+    uint32_t u32_FailedAtByteNr = 0;
+
+    // setup semi random data
+    uint8_t u8 = 0;
+    for(uint16_t i = 0; i<MEMSIZE; i++)
+    {
+        a8MemToRun[i] = u8;
+        u8++;
+    }
+
+    // happy path
+    QVERIFY(b8_MCM_Init(&sThis, MEMSIZE, _fpReadByte, _fpWriteByte ) == 0);
+    QVERIFY(b8_MCM_Element_Any_W0(&sThis) == 0);
+    QVERIFY(b8_MCM_March(&sThis, eBot2Top, eR0W1, &u32_FailedAtByteNr) == 0);
+    QVERIFY(u32_FailedAtByteNr == 0);
+    for(uint32_t i = 0; i<MEMSIZE; i++)
+    {
+        QVERIFY(a8MemToRun[i] == 0xFF);
+    }
+
+    QVERIFY(b8_MCM_March(&sThis, eBot2Top, eR1W0, &u32_FailedAtByteNr) == 0);
+    QVERIFY(u32_FailedAtByteNr == 0);
+
+    for(uint32_t i = 0; i<MEMSIZE; i++)
+    {
+        QVERIFY(a8MemToRun[i] == 0x00);
+    }
+
+    QVERIFY(b8_MCM_March(&sThis, eTop2Bot, eR0W1, &u32_FailedAtByteNr) == 0);
+    QVERIFY(u32_FailedAtByteNr == 0);
+    for(uint32_t i = 0; i<MEMSIZE; i++)
+    {
+        QVERIFY(a8MemToRun[i] == 0xFF);
+    }
+
+    QVERIFY(b8_MCM_March(&sThis, eTop2Bot, eR1W0, &u32_FailedAtByteNr) == 0);
+    QVERIFY(u32_FailedAtByteNr == 0);
+    for(uint32_t i = 0; i<MEMSIZE; i++)
+    {
+        QVERIFY(a8MemToRun[i] == 0x00);
+    }
+
+
+    // put error in Byte 0
+      // actually, to test R0W1 we dont need to run the whole MCM algo in front, it's enough when the class struct is inited and the memory is all 0
+      for(uint32_t i = 0; i<MEMSIZE; i++)
+      {
+          a8MemToRun[i] = 0xFF;
+      }
+      a8MemToRun[0] = 0xFE;
+      QVERIFY(b8_MCM_March(&sThis, eTop2Bot, eR1W0, &u32_FailedAtByteNr) == 1);
+      QVERIFY(u32_FailedAtByteNr == 0);
+
+
+      // put error in Byte 1
+      for(uint32_t i = 0; i<MEMSIZE; i++)
+      {
+          a8MemToRun[i] = 0xFF;
+      }
+      a8MemToRun[1] = 0xFD;
+      QVERIFY(b8_MCM_March(&sThis, eTop2Bot, eR1W0, &u32_FailedAtByteNr) == 1);
+      QVERIFY(u32_FailedAtByteNr == 1);
+
+      // put error in Byte half way
+      for(uint32_t i = 0; i<MEMSIZE; i++)
+      {
+          a8MemToRun[i] = 0xFF;
+      }
+      a8MemToRun[MEMSIZE/2] = 0xF7;
+      QVERIFY(b8_MCM_March(&sThis, eTop2Bot, eR1W0, &u32_FailedAtByteNr) == 1);
+      QVERIFY(u32_FailedAtByteNr == MEMSIZE/2);
+
+
+      // put error in Byte close to the end
+      for(uint32_t i = 0; i<MEMSIZE; i++)
+      {
+          a8MemToRun[i] = 0xFF;
+      }
+      a8MemToRun[MEMSIZE-10] = 0x7F;
+      QVERIFY(b8_MCM_March(&sThis, eTop2Bot, eR1W0, &u32_FailedAtByteNr) == 1);
+      QVERIFY(u32_FailedAtByteNr == MEMSIZE-10);
+
+      // put error in the end, last bit
+      for(uint32_t i = 0; i<MEMSIZE; i++)
+      {
+          a8MemToRun[i] = 0xFF;
+      }
+      a8MemToRun[MEMSIZE-1] = 0xBF;
+      QVERIFY(b8_MCM_March(&sThis, eTop2Bot, eR1W0, &u32_FailedAtByteNr) == 1);
+      QVERIFY(u32_FailedAtByteNr == MEMSIZE-1);
+
+      // put error in the end, random
+      for(uint32_t i = 0; i<MEMSIZE; i++)
+      {
+          a8MemToRun[i] = 0xFF;
+      }
+      a8MemToRun[MEMSIZE-1] = 0xFC;
+      QVERIFY(b8_MCM_March(&sThis, eTop2Bot, eR1W0, &u32_FailedAtByteNr) == 1);
+      QVERIFY(u32_FailedAtByteNr == MEMSIZE-1);
+}
+
+void TST_Framework::TC_R0()
+{
+    // setup the test
+    tfp_BR_ReadByte _fpReadByte   = &u8ReadByte;
+    tfp_BR_WriteByte _fpWriteByte = &vWriteByte;
+
+    ts_MCM_ClassStruct sThis;
+    uint32_t u32_FailedAtByteNr = 0;
+
+    // setup semi random data
+    uint8_t u8 = 0;
+    for(uint16_t i = 0; i<MEMSIZE; i++)
+    {
+        a8MemToRun[i] = u8;
+        u8++;
+    }
+
+    // happy path
+    QVERIFY(b8_MCM_Init(&sThis, MEMSIZE, _fpReadByte, _fpWriteByte ) == 0);
+    QVERIFY(b8_MCM_Element_Any_W0(&sThis) == 0);
+
+    for(uint32_t i = 0; i<MEMSIZE; i++)
+    {
+        QVERIFY(a8MemToRun[i] == 0x00);
+    }
+
+    QVERIFY(b8_MCM_Element_Any_R0(&sThis, &u32_FailedAtByteNr) == 0);
+    QVERIFY(u32_FailedAtByteNr == 0);
+
+    // make byte 0 errornous
+    a8MemToRun[0] = 0x01;
+    QVERIFY(b8_MCM_Element_Any_R0(&sThis, &u32_FailedAtByteNr) == 1);
+    QVERIFY(u32_FailedAtByteNr == 0);
+
+    // make byte 1 errornous
+    a8MemToRun[0] = 0x00;
+    a8MemToRun[1] = 0x01;
+    QVERIFY(b8_MCM_Element_Any_R0(&sThis, &u32_FailedAtByteNr) == 1);
+    QVERIFY(u32_FailedAtByteNr == 1);
+
+    // make byte 2 errornous
+    a8MemToRun[1] = 0x00;
+    a8MemToRun[2] = 0x0C;
+    QVERIFY(b8_MCM_Element_Any_R0(&sThis, &u32_FailedAtByteNr) == 1);
+    QVERIFY(u32_FailedAtByteNr == 2);
+
+    // make byte half memsize errornous
+    a8MemToRun[2] = 0x00;
+    a8MemToRun[MEMSIZE/2] = 0xAB;
+    QVERIFY(b8_MCM_Element_Any_R0(&sThis, &u32_FailedAtByteNr) == 1);
+    QVERIFY(u32_FailedAtByteNr == MEMSIZE/2);
+
+    // make byte close to the end errornous
+    a8MemToRun[MEMSIZE/2] = 0x00;
+    a8MemToRun[MEMSIZE-10] = 0xAB;
+    QVERIFY(b8_MCM_Element_Any_R0(&sThis, &u32_FailedAtByteNr) == 1);
+    QVERIFY(u32_FailedAtByteNr == MEMSIZE-10);
+
+    // make byte very close to the end errornous
+    a8MemToRun[MEMSIZE-10] = 0x00;
+    a8MemToRun[MEMSIZE-2] = 0xCC;
+    QVERIFY(b8_MCM_Element_Any_R0(&sThis, &u32_FailedAtByteNr) == 1);
+    QVERIFY(u32_FailedAtByteNr == MEMSIZE-2);
+
+    // make byte in the the end errornous
+    a8MemToRun[MEMSIZE-2] = 0x00;
+    a8MemToRun[MEMSIZE-1] = 0xCC;
+    QVERIFY(b8_MCM_Element_Any_R0(&sThis, &u32_FailedAtByteNr) == 1);
+    QVERIFY(u32_FailedAtByteNr == MEMSIZE-1);
+
+    a8MemToRun[MEMSIZE-1] = 0x00;
+    //check the whole mem to make sure no illegal writing occured
+    for(uint32_t i = 0; i<MEMSIZE; i++)
+    {
+        QVERIFY(a8MemToRun[i] == 0x00);
+    }
+
+}
 #if 0
 // viewcode
 

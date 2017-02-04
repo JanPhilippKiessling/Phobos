@@ -535,12 +535,12 @@ typedef struct
 
 uint8_t b8_MCM_Init(ts_MCM_ClassStruct* _pThis,     //!< zeiger auf das struct dass das zu bearbeitende objekt repraesentiert, also die attribute/variablen der klasse
             uint32_t _u32MemSize,
-
             tfp_BR_ReadByte _fpReadByte,
             tfp_BR_WriteByte _fpWriteByte
             );
 
 uint8_t b8_MCM_Element_Any_W0(ts_MCM_ClassStruct* _pThis);
+uint8_t b8_MCM_Element_Any_R0(ts_MCM_ClassStruct* _pThis, uint32_t *_pu32FailedAtByteNr);
 
 uint8_t b8_MCM_March( ts_MCM_ClassStruct* _pThis,
                         te_MarchElementDirection _eDir,

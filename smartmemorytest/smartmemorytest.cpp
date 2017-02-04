@@ -16,7 +16,7 @@ uint32_t u32ByteCnt_DirectionDependant(ts_MCM_ClassStruct* _pThis, te_MarchEleme
 */
 
 uint8_t b8_MCM_Init(ts_MCM_ClassStruct* _pThis,
-                        uint32_t _u32MemSize,       //!< siehe Definition von ts_BIR_ClassStruct
+                        uint32_t _u32MemSize,           //!< siehe Definition von ts_BIR_ClassStruct
 
                         tfp_BR_ReadByte _fpReadByte,    //!< siehe Definition von ts_BIR_ClassStruct
                         tfp_BR_WriteByte _fpWriteByte   //!< siehe Definition von ts_BIR_ClassStruct
@@ -137,7 +137,6 @@ void vWriteByte_DirectionDependant(ts_MCM_ClassStruct* _pThis, uint32_t _u32Byte
 
 
 /* this is a helper function that updates the compare (and write) value for b8_MCM_Element() depending on the active march element. It was created to increase readability */
-
 uint8_t u8_UpdateCmpVal(uint8_t _u8CmpVal, te_MarchElementAction _eAction, te_MarchElementDirection _eDir, uint8_t _u8BitCnt)
 {
     uint8_t u8_NewCmpVal = _u8CmpVal;
@@ -167,6 +166,7 @@ uint8_t u8_UpdateCmpVal(uint8_t _u8CmpVal, te_MarchElementAction _eAction, te_Ma
 
     return u8_NewCmpVal;
 }
+
 /* this is a helper function that (re)inits the compare (and write) value for b8_MCM_Element() depending on the active march element. It was created to increase readability */
 uint8_t u8_InitCmpVal(te_MarchElementAction _eAction)
 {
@@ -182,4 +182,21 @@ uint8_t u8_InitCmpVal(te_MarchElementAction _eAction)
     }
 
     return u8_NewCmpVal;
+}
+
+uint8_t b8_MCM_Element_Any_R0(ts_MCM_ClassStruct* _pThis,  uint32_t* _pu32FailedAtByteNr)
+{
+    uint8_t u8RetVal = 0;
+    uint32_t u32ByteCnt = 0;
+
+    for(u32ByteCnt = 0; (u32ByteCnt < _pThis->m_u32MemSize) && (u8RetVal == 0); u32ByteCnt++)
+    {
+        if(_pThis->m_fpReadByte(u32ByteCnt) != 0)
+        {
+            u8RetVal = 1;
+            *_pu32FailedAtByteNr = u32ByteCnt;
+        }
+    }
+
+    return u8RetVal;
 }
