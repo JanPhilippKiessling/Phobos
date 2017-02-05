@@ -15,9 +15,8 @@ uint32_t u32ByteCnt_DirectionDependant(ts_MCM_ClassStruct* _pThis, te_MarchEleme
  * brief: returns 0 if all pointers != 0 and 1 if one is NULL
 */
 
-uint8_t b8_MCM_Init(ts_MCM_ClassStruct* _pThis,
+uint8_t b8_MCM_Init(    ts_MCM_ClassStruct* _pThis,
                         uint32_t _u32MemSize,           //!< siehe Definition von ts_BIR_ClassStruct
-
                         tfp_BR_ReadByte _fpReadByte,    //!< siehe Definition von ts_BIR_ClassStruct
                         tfp_BR_WriteByte _fpWriteByte   //!< siehe Definition von ts_BIR_ClassStruct
                         )
@@ -38,7 +37,6 @@ uint8_t b8_MCM_Init(ts_MCM_ClassStruct* _pThis,
         _pThis->m_fpWriteByte = _fpWriteByte;
     }
 
-
     return u8RetVal;
 }
 
@@ -46,10 +44,12 @@ uint8_t b8_MCM_Init(ts_MCM_ClassStruct* _pThis,
 uint8_t b8_MCM_Element_Any_W0(ts_MCM_ClassStruct* _pThis)
 {
     uint32_t i = 0;
+
     for(; i < _pThis->m_u32MemSize; i++)
     {
         _pThis->m_fpWriteByte(i,0);
     }
+
     return 0;
 }
 
@@ -118,7 +118,6 @@ uint8_t u8ReadByte_DirectionDependant(ts_MCM_ClassStruct* _pThis, uint32_t _u32B
     }
 
     return u8RetVal;
-
 }
 
 // damit die for schleife in b8_MCM_Element() nicht rueckwaerts laufen muesste (dann brauchte man auch eine variable die in's negative laufen kann, um die stelle 0 noch zu erwischen) manipulieren wir lieber die schreib und lese adresse

@@ -2,12 +2,6 @@
 #include "smartmemorytest.h"
 #include <iostream>
 
-
-#define USE_SHOWMEM 0        // printing uses time, keep it off for standard runs
-void vPrintMem(uint16_t NrOfBytes);
-
-
-
 using namespace std;
 
 class TST_Framework: public QObject
@@ -22,7 +16,7 @@ private slots:
 };
 
 
-#define MEMSIZE 100
+#define MEMSIZE ((uint32_t)100)
 
 uint8_t a8MemToRun[MEMSIZE];
 
@@ -67,32 +61,6 @@ void vManipulateMemory(uint32_t _u32BytNr, uint8_t _u8Value, uint32_t _u32Trigge
     mgu32_ManipAtStepNr = _u32ManipAtStepNr;
 }
 
-void vPrintMem(uint16_t NrOfBytes)
-{
-#if USE_SHOWMEM // printing uses time, keep it off for standard runs
-    for(int i = 0; i < NrOfBytes; i++)
-    {
-        uint8_t Temp = a8MemToRun[i];
-        char show = 0;
-        cout << "Byte " << i << ": ";
-        for(int a = 0; a < 8; a++)
-        {
-            if( (Temp << a) & 0x80)
-            {
-                show = '1';
-            }
-            else
-            {
-                show = (char)' ';
-            }
-            cout << show;
-        }
-        cout <<endl;
-    }
-    cout << "----------------"<<endl;
-#endif
-}
-
 void TST_Framework::TC_W0_and_BotToTop_R0W1()
 {
     tfp_BR_ReadByte _fpReadByte   = &u8ReadByte;
@@ -103,7 +71,7 @@ void TST_Framework::TC_W0_and_BotToTop_R0W1()
 
     // setup semi random data
     uint8_t u8 = 0;
-    for(uint16_t i = 0; i<MEMSIZE; i++)
+    for(uint32_t i = 0; i<MEMSIZE; i++)
     {
         a8MemToRun[i] = u8;
         u8++;
@@ -216,7 +184,7 @@ void TST_Framework::TC_BotToTop_R1W0()
 
     // setup semi random data
     uint8_t u8 = 0;
-    for(uint16_t i = 0; i<MEMSIZE; i++)
+    for(uint32_t i = 0; i<MEMSIZE; i++)
     {
         a8MemToRun[i] = u8;
         u8++;
@@ -310,8 +278,6 @@ void TST_Framework::TC_BotToTop_R1W0()
     QVERIFY(u32_FailedAtByteNr == MEMSIZE-1);
 }
 
-
-
 void TST_Framework::TC_TopToBot_R0W1()
 {
     // setup the test
@@ -323,7 +289,7 @@ void TST_Framework::TC_TopToBot_R0W1()
 
     // setup semi random data
     uint8_t u8 = 0;
-    for(uint16_t i = 0; i<MEMSIZE; i++)
+    for(uint32_t i = 0; i<MEMSIZE; i++)
     {
         a8MemToRun[i] = u8;
         u8++;
@@ -423,7 +389,7 @@ void TST_Framework::TC_TopToBot_R1W0()
 
     // setup semi random data
     uint8_t u8 = 0;
-    for(uint16_t i = 0; i<MEMSIZE; i++)
+    for(uint32_t i = 0; i<MEMSIZE; i++)
     {
         a8MemToRun[i] = u8;
         u8++;
@@ -461,63 +427,72 @@ void TST_Framework::TC_TopToBot_R1W0()
         QVERIFY(a8MemToRun[i] == 0x00);
     }
 
-
     // put error in Byte 0
-      // actually, to test R0W1 we dont need to run the whole MCM algo in front, it's enough when the class struct is inited and the memory is all 0
-      for(uint32_t i = 0; i<MEMSIZE; i++)
-      {
-          a8MemToRun[i] = 0xFF;
-      }
-      a8MemToRun[0] = 0xFE;
-      QVERIFY(b8_MCM_March(&sThis, eTop2Bot, eR1W0, &u32_FailedAtByteNr) == 1);
-      QVERIFY(u32_FailedAtByteNr == 0);
+    // actually, to test R0W1 we dont need to run the whole MCM algo in front, it's enough when the class struct is inited and the memory is all 0
+    for(uint32_t i = 0; i<MEMSIZE; i++)
+    {
+      a8MemToRun[i] = 0xFF;
+    }
+    a8MemToRun[0] = 0xFE;
+    QVERIFY(b8_MCM_March(&sThis, eTop2Bot, eR1W0, &u32_FailedAtByteNr) == 1);
+    QVERIFY(u32_FailedAtByteNr == 0);
 
 
-      // put error in Byte 1
-      for(uint32_t i = 0; i<MEMSIZE; i++)
-      {
-          a8MemToRun[i] = 0xFF;
-      }
-      a8MemToRun[1] = 0xFD;
-      QVERIFY(b8_MCM_March(&sThis, eTop2Bot, eR1W0, &u32_FailedAtByteNr) == 1);
-      QVERIFY(u32_FailedAtByteNr == 1);
+    // put error in Byte 1
+    for(uint32_t i = 0; i<MEMSIZE; i++)
+    {
+      a8MemToRun[i] = 0xFF;
+    }
+    a8MemToRun[1] = 0xFD;
+    QVERIFY(b8_MCM_March(&sThis, eTop2Bot, eR1W0, &u32_FailedAtByteNr) == 1);
+    QVERIFY(u32_FailedAtByteNr == 1);
 
-      // put error in Byte half way
-      for(uint32_t i = 0; i<MEMSIZE; i++)
-      {
-          a8MemToRun[i] = 0xFF;
-      }
-      a8MemToRun[MEMSIZE/2] = 0xF7;
-      QVERIFY(b8_MCM_March(&sThis, eTop2Bot, eR1W0, &u32_FailedAtByteNr) == 1);
-      QVERIFY(u32_FailedAtByteNr == MEMSIZE/2);
+    // put error in Byte half way
+    for(uint32_t i = 0; i<MEMSIZE; i++)
+    {
+      a8MemToRun[i] = 0xFF;
+    }
+    a8MemToRun[MEMSIZE/2] = 0xF7;
+    QVERIFY(b8_MCM_March(&sThis, eTop2Bot, eR1W0, &u32_FailedAtByteNr) == 1);
+    QVERIFY(u32_FailedAtByteNr == MEMSIZE/2);
 
 
-      // put error in Byte close to the end
-      for(uint32_t i = 0; i<MEMSIZE; i++)
-      {
-          a8MemToRun[i] = 0xFF;
-      }
-      a8MemToRun[MEMSIZE-10] = 0x7F;
-      QVERIFY(b8_MCM_March(&sThis, eTop2Bot, eR1W0, &u32_FailedAtByteNr) == 1);
-      QVERIFY(u32_FailedAtByteNr == MEMSIZE-10);
+    // put error in Byte close to the end
+    for(uint32_t i = 0; i<MEMSIZE; i++)
+    {
+      a8MemToRun[i] = 0xFF;
+    }
+    a8MemToRun[MEMSIZE-10] = 0x7F;
+    QVERIFY(b8_MCM_March(&sThis, eTop2Bot, eR1W0, &u32_FailedAtByteNr) == 1);
+    QVERIFY(u32_FailedAtByteNr == MEMSIZE-10);
 
-      // put error in the end, last bit
-      for(uint32_t i = 0; i<MEMSIZE; i++)
-      {
-          a8MemToRun[i] = 0xFF;
-      }
-      a8MemToRun[MEMSIZE-1] = 0xBF;
-      QVERIFY(b8_MCM_March(&sThis, eTop2Bot, eR1W0, &u32_FailedAtByteNr) == 1);
-      QVERIFY(u32_FailedAtByteNr == MEMSIZE-1);
+    // put error in Byte more close to the end
+    for(uint32_t i = 0; i<MEMSIZE; i++)
+    {
+      a8MemToRun[i] = 0xFF;
+    }
+    a8MemToRun[MEMSIZE-2] = 0x55;
+    QVERIFY(b8_MCM_March(&sThis, eTop2Bot, eR1W0, &u32_FailedAtByteNr) == 1);
+    QVERIFY(u32_FailedAtByteNr == MEMSIZE-2);
 
-      // put error in the end, random
-      for(uint32_t i = 0; i<MEMSIZE; i++)
-      {
-          a8MemToRun[i] = 0xFF;
-      }
-      a8MemToRun[MEMSIZE-1] = 0xFC;
-      QVERIFY(b8_MCM_March(&sThis, eTop2Bot, eR1W0, &u32_FailedAtByteNr) == 1);
-      QVERIFY(u32_FailedAtByteNr == MEMSIZE-1);
+
+    // put error in the end, last bit
+    for(uint32_t i = 0; i<MEMSIZE; i++)
+    {
+      a8MemToRun[i] = 0xFF;
+    }
+    a8MemToRun[MEMSIZE-1] = 0xBF;
+    QVERIFY(b8_MCM_March(&sThis, eTop2Bot, eR1W0, &u32_FailedAtByteNr) == 1);
+    QVERIFY(u32_FailedAtByteNr == MEMSIZE-1);
+
+    // put error in the end, random
+    for(uint32_t i = 0; i<MEMSIZE; i++)
+    {
+      a8MemToRun[i] = 0xFF;
+    }
+    a8MemToRun[MEMSIZE-1] = 0xFC;
+    QVERIFY(b8_MCM_March(&sThis, eTop2Bot, eR1W0, &u32_FailedAtByteNr) == 1);
+    QVERIFY(u32_FailedAtByteNr == MEMSIZE-1);
 }
 
 void TST_Framework::TC_R0()
@@ -531,7 +506,7 @@ void TST_Framework::TC_R0()
 
     // setup semi random data
     uint8_t u8 = 0;
-    for(uint16_t i = 0; i<MEMSIZE; i++)
+    for(uint32_t i = 0; i<MEMSIZE; i++)
     {
         a8MemToRun[i] = u8;
         u8++;
@@ -598,28 +573,6 @@ void TST_Framework::TC_R0()
     }
 
 }
-#if 0
-// viewcode
-
-if(u8ByteCnt == 0)
-{
-cout << hex << (uint16_t)(_pThis->m_fpReadByte(u8ByteCnt+2)) << (uint16_t)(_pThis->m_fpReadByte(u8ByteCnt+1)) << (uint16_t)(_pThis->m_fpReadByte(u8ByteCnt))<< endl;
-getchar();
-}
-
-if(u8ByteCnt == 1)
-{
-cout << hex << (uint16_t)(_pThis->m_fpReadByte(u8ByteCnt+1)) << (uint16_t)(_pThis->m_fpReadByte(u8ByteCnt+0)) << (uint16_t)(_pThis->m_fpReadByte(u8ByteCnt-1))<< endl;
-getchar();
-}
-
-if(u8ByteCnt == 2)
-{
-cout << hex << (uint16_t)(_pThis->m_fpReadByte(u8ByteCnt+0)) << (uint16_t)(_pThis->m_fpReadByte(u8ByteCnt-1)) << (uint16_t)(_pThis->m_fpReadByte(u8ByteCnt-2))<< endl;
-getchar();
-}
-#endif
-
 QTEST_MAIN(TST_Framework)
 
 #include "tst_framework.moc"

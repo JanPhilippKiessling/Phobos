@@ -1,7 +1,31 @@
 /*
  *  File:   smartmemorytest.h
     Author: Jan Philipp Kiessling
-    brief:  This is a test for external chips like EEPROMs or NAND-Chips
+
+    Anforderungen:
+            1.) Das Modul MCM muss einen MarchC- gemaess \research\ch03.pdf S.9 implementieren
+            2.) Wenn eine Zelle als fehlerhaft erkannt wird, muss das Modul MCM die Adresse dieser Zelle zurueck geben.
+            3.) Das Modul MCM muss objekt orientiert entwickelt werden.
+            4.) Das Modul MCM muss nach tdd entwickelt werden.
+            5.) Die Unittests fuer das Modul MCM muessen eine branch-Abdeckung von 100 % aufweisen.
+            6.) Das Modul MCM muss einem Review unterzogen werden.
+            7.) Das Modul MCM muss hardware-unabhaengig sein.
+
+
+
+    brief:  long story short: this is a March Implementation. It was intended to be uses as MarchC- but the
+            Algo got so abstract that it now can be used for several other March-Checks. The heart is b8_MCM_March()
+            where you hand it the direction of the element (bot2top or top2bot) and the action (Read 0 Write 1 or vice versa)
+            To keep it hardware-abstract it works with ReadByte and WriteByte functions. You need to supply it with a pointer
+            to these functions.
+
+            Why MarchC-? Because the Norms (61508 etc) accept this algo for RAM-Tests. The development started with the idea
+            to provide a MemTest for EEPROM, but because of Checksums we dont need that, it takes too much time anyway.
+            The following text is a nice small analysis of different techs to do so and memtests in general:
+
+
+
+            --------------
 
 
             Fuer sicherheitskritische Anwendungen ist es noetig Speicher auf seine korrekte
@@ -488,19 +512,9 @@
     *********************
     Achtung, man braucht garkeinen Memtest fuer EEPROMs. Denn da kann  man immer einfach checksummen nehmen.
 
-    --> MarchC- als standdart fuer ramtest implementieren
+    --> MarchC- ramtest implementieren, da dieser ein in den normen anerkannter standard ist
 
     [1] http://2www.esacademy.com/en/library/technical-articles-and-documents/miscellaneous/software-based-memory-testing.html
-
-
-
-
-
-
-
-
-
-
 */
 
 
@@ -542,10 +556,10 @@ uint8_t b8_MCM_Init(ts_MCM_ClassStruct* _pThis,     //!< zeiger auf das struct d
 uint8_t b8_MCM_Element_Any_W0(ts_MCM_ClassStruct* _pThis);
 uint8_t b8_MCM_Element_Any_R0(ts_MCM_ClassStruct* _pThis, uint32_t *_pu32FailedAtByteNr);
 
-uint8_t b8_MCM_March( ts_MCM_ClassStruct* _pThis,
+uint8_t b8_MCM_March(   ts_MCM_ClassStruct* _pThis,
                         te_MarchElementDirection _eDir,
                         te_MarchElementAction _eAction,
                         uint32_t* _pu32FailedAtByteNr   //!< contains the number of the broken byte, in case sth went wrong, cnt starts at 0
                         );
 
-#endif // BITRUNNER_H
+#endif
