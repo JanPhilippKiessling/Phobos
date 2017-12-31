@@ -1,21 +1,26 @@
 switch()
 {
-	case jan:
+	case teDistanceControlState.Starte_Messung:
 	{
 		
 	}break;
 
-	case jan22:
+	case teDistanceControlState.Messung_beendet:
 	{
 		
 	}break;
 
-	case eJan2:
+	case teDistanceControlState.BewegeVonAmeiseWeg:
 	{
 		
 	}break;
 
-	case Jan4:
+	case teDistanceControlState.BewegeAufAmeiseZu:
+	{
+		
+	}break;
+
+	case teDistanceControlState.ende:
 	{
 		
 	}break;

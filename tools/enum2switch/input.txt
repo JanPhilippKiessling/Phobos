@@ -1,7 +1,8 @@
-enum
-{
-	jan = 0,
-	jan22,
-	eJan2,
-	Jan4
-}
+enum teDistanceControlState
+        {
+            Starte_Messung,
+            Messung_beendet,
+            BewegeVonAmeiseWeg,
+            BewegeAufAmeiseZu,
+            ende,
+        };
